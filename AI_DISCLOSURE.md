@@ -18,11 +18,11 @@ The `README.md` setup guide was written and validated by the author. AI (GitHub 
 
 ### Code & Software Architecture
 
-All source code, system architecture, and feature design in `web.py` and `detector.py` was implemented by hand. Design decisions (pipeline structure, multi-threaded camera/motion/detection/upload architecture, frame differencing approach, S3 + Bedrock integration) were made by the author based on domain knowledge and project requirements.
+All source code, system architecture, and feature design in `web.py` and `detector.py` was implemented by hand. Design decisions (pipeline structure, camera/motion/detection/upload architecture, frame differencing approach, S3 + Bedrock integration) were made by the author based on domain knowledge and project requirements.
 
 ### Engineering Best Practices
 
-AI was consulted to **verify** choices around project structure, configuration patterns, `.gitignore` conventions, and credential handling. These were treated as a reference, not a source of truth.
+AI was consulted to verify choices around project structure, configuration patterns, `.gitignore` conventions, and credential handling.
 
 ### Debugging & Problem-Solving
 
@@ -35,7 +35,7 @@ AI was not used for the following:
 
 ## Tools
 
-- **GitHub Copilot** (Claude Sonnet 4.6): conversational debugging, documentation review, best-practice verification
+- GitHub Copilot (Claude Sonnet 4.6): conversational debugging, documentation review, best-practice verification
 
 ---
 
