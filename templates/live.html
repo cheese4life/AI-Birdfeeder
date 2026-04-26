@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% set active = "live" %}
+{% block title %}Birdhouse — Live{% endblock %}
+
+{% block extra_css %}
+.dual-streams { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.stream-box { border: 1px solid #333; position: relative; aspect-ratio: 16/9; overflow: hidden; }
+.stream-box img { width: 100%; height: 100%; object-fit: cover; display: block; background: #111; }
+.stream-label {
+  position: absolute; top: 8px; left: 8px;
+  background: rgba(0,0,0,0.7); color: #888; padding: 2px 8px;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1px; z-index: 1;
+}
+.trigger-section { margin-top: 24px; }
+.trigger-list { list-style: none; padding: 0; margin: 8px 0 0 0; min-height: 40px; }
+.trigger-list li {
+  display: flex; align-items: center; gap: 12px;
+  padding: 6px 0; border-bottom: 1px solid #222; font-size: 13px;
+}
+.trigger-list .ts { color: #666; min-width: 200px; }
+.trigger-list a { color: #4a4; text-decoration: none; }
+.trigger-list a:hover { text-decoration: underline; }
+.sidebar-row { display: grid; grid-template-columns: 1fr 320px; gap: 12px; margin-top: 12px; }
+.sidebar-row .card { padding: 16px; min-height: 120px; }
+.debug-section { margin-top: 16px; }
+.debug-log {
+  max-height: 300px; min-height: 60px; overflow-y: auto; font-size: 12px; line-height: 1.6;
+  border: 1px solid #222; padding: 8px; background: #0a0a0a;
+}
+.debug-entry { padding: 6px 0; border-bottom: 1px solid #1a1a1a; }
+.debug-entry .ts { color: #555; }
+.debug-entry .species { color: #4a4; }
+.debug-entry .nobird { color: #666; }
+.debug-entry .raw { color: #444; font-size: 11px; word-break: break-all; }
+@media (max-width: 1000px) {
+  .dual-streams { grid-template-columns: 1fr; }
+  .sidebar-row { grid-template-columns: 1fr; }
+}
+{% endblock %}
+
+{% block content %}
+<h1>Live Feed</h1>
+
+<div class="dual-streams">
+  <div class="stream-box">
+    <span class="stream-label">raw</span>
+    <img src="/stream" alt="Raw camera feed">
+  </div>
+  <div class="stream-box">
+    <span class="stream-label">detection</span>
+    <img src="/stream_detect" alt="Detection overlay feed">
+  </div>
+</div>
+
+<div class="sidebar-row">
+  <div class="trigger-section">
+    <div class="label">Recent triggers</div>
+    <ul class="trigger-list" id="trigger-list">
+      <li style="color:#555;">Waiting for triggers…</li>
+    </ul>
+  </div>
+  <div class="card" id="latest-bird">
+    <div class="label">Latest Bird (Bedrock)</div>
+    <div id="bird-info" style="padding: 12px; color: #555;">
+      No Bedrock results yet
+    </div>
+  </div>
+</div>
+
+<div class="debug-section">
+  <div class="label">AI Debug Log</div>
+  <div class="debug-log" id="debug-log">
+    <div style="color:#555;">Waiting for AI responses…</div>
+  </div>
+</div>
+
+<script>
+// Track previous data to avoid redundant DOM updates
+let _prevTriggers = "";
+let _prevLatest = "";
+let _prevDebug = "";
+
+function fetchTriggers() {
+  fetch("/api/triggers")
+    .then(r => r.json())
+    .then(data => {
+      if (!data || !data.length) return;
+      const sig = JSON.stringify(data);
+      if (sig === _prevTriggers) return;
+      _prevTriggers = sig;
+      const ul = document.getElementById("trigger-list");
+      ul.innerHTML = "";
+      data.slice().reverse().forEach(t => {
+        const li = document.createElement("li");
+        const ts = t.timestamp ? new Date(t.timestamp).toLocaleString() : "—";
+        li.innerHTML =
+          '<span class="ts">' + ts + '</span>' +
+          '<a href="/captures/' + t.date + '/' + t.uuid + '.jpg" target="_blank">' + t.uuid.slice(0, 8) + '…</a>';
+        ul.appendChild(li);
+      });
+    })
+    .catch(() => {});
+}
+
+function fetchLatest() {
+  fetch("/api/latest")
+    .then(r => r.json())
+    .then(data => {
+      const el = document.getElementById("bird-info");
+      const sig = JSON.stringify(data);
+      if (sig === _prevLatest) return;
+      _prevLatest = sig;
+      if (!data) { el.innerHTML = '<div style="color:#555;">No Bedrock results yet</div>'; return; }
+      const species = typeof data.species === "object" ? data.species.common : (data.species || "Unknown");
+      const scientific = typeof data.species === "object" ? data.species.scientific : "";
+      const confidence = data.confidence || "—";
+      const ts = data.timestamp || data._date || "";
+      const uuid = data._uuid || "";
+      const d = data._date || "";
+      let html = '';
+      if (uuid && d) {
+        html += '<img src="/cache/images/' + d + '/' + uuid + '.jpg" style="width:100%;margin-bottom:12px;" onerror="this.style.display=\'none\'">';
+      }
+      html += '<div class="value">' + species + '</div>';
+      if (scientific) html += '<div class="label" style="margin-top:2px;">' + scientific + '</div>';
+      html += '<div style="margin-top:8px;"><span class="label">confidence </span><span class="badge ' + (confidence === "high" ? "success" : "") + '">' + confidence + '</span></div>';
+      html += '<div style="margin-top:4px;"><span class="label">time </span>' + ts + '</div>';
+      el.innerHTML = html;
+    })
+    .catch(() => {});
+}
+
+function fetchDebug() {
+  fetch("/api/debug")
+    .then(r => r.json())
+    .then(data => {
+      if (!data || !data.length) return;
+      const sig = JSON.stringify(data);
+      if (sig === _prevDebug) return;
+      _prevDebug = sig;
+      const el = document.getElementById("debug-log");
+      el.innerHTML = "";
+      data.slice().reverse().forEach(d => {
+        const div = document.createElement("div");
+        div.className = "debug-entry";
+        const ts = d.timestamp ? new Date(d.timestamp).toLocaleString() : "—";
+        let info;
+        if (d.is_bird && d.species) {
+          const name = typeof d.species === "object" ? d.species.common : d.species;
+          const sci = typeof d.species === "object" ? (d.species.scientific || "") : "";
+          info = '<span class="species">BIRD: ' + name + (sci ? ' (' + sci + ')' : '') + '</span> — ' + (d.confidence || "?") + ' confidence';
+        } else {
+          info = '<span class="nobird">No bird</span> — ' + (d.description || "").slice(0, 80);
+        }
+        div.innerHTML = '<span class="ts">' + ts + '</span> ' + info + '<br><span class="raw">' + JSON.stringify(d).slice(0, 200) + '…</span>';
+        el.appendChild(div);
+      });
+    }).catch(() => {});
+}
+
+fetchTriggers();
+fetchLatest();
+fetchDebug();
+setInterval(fetchTriggers, 5000);
+setInterval(fetchLatest, 10000);
+setInterval(fetchDebug, 8000);
+</script>
+{% endblock %}

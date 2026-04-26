@@ -1,0 +1,15 @@
+[Unit]
+Description=Smart Birdhouse Web Server
+After=network.target
+
+[Service]
+Type=simple
+User=anton
+WorkingDirectory=/home/anton/birdhouse
+ExecStart=/usr/bin/python3 -m gunicorn --bind 0.0.0.0:5000 --workers 1 --threads 16 --timeout 0 --graceful-timeout 30 --access-logfile - web:app
+Restart=always
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,31 @@
+# Personal capture data — never publish images of your property
+captures/
+
+# Cached S3 data
+cache/
+
+# AWS CLI bundle (255 MB — reinstall via aws/install)
+aws/dist/
+awscliv2.zip
+
+# ML model binaries — download separately (see README)
+*.caffemodel
+*.pt
+
+# Local config with bucket name / paths — copy from config.json.example
+config.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+*.egg-info/
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp

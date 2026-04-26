@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% set active = "daily" %}
+{% block title %}Birdhouse — Daily{% endblock %}
+
+{% block content %}
+<h1>Daily Summary</h1>
+
+<div style="margin-bottom: 24px;">
+  <label class="label" for="date-select">Date</label><br>
+  <select id="date-select" onchange="window.location='/daily?date='+this.value">
+    {% if not dates %}
+    <option value="{{ selected }}">{{ selected }}</option>
+    {% endif %}
+    {% for d in dates %}
+    <option value="{{ d }}" {% if d == selected %}selected{% endif %}>{{ d }}</option>
+    {% endfor %}
+  </select>
+</div>
+
+{% if species %}
+<div class="grid">
+  {% for s in species %}
+  <div class="card">
+    {% if s.photo_uuid and s.photo_date %}
+    <img src="/cache/images/{{ s.photo_date }}/{{ s.photo_uuid }}.jpg"
+         style="width:100%;margin-bottom:12px;border:1px solid #333;"
+         onerror="this.style.display='none'">
+    {% endif %}
+    <div class="value">{{ s.common }}</div>
+    {% if s.scientific %}
+    <div class="label" style="margin-top:2px;font-style:italic;">{{ s.scientific }}</div>
+    {% endif %}
+    <div class="meta" style="margin-top:12px;">
+      <div>
+        <span class="label">visits</span><br>
+        <span class="value" style="font-size:24px;">{{ s.count }}</span>
+      </div>
+    </div>
+    {% if s.description %}
+    <div style="margin-top:12px;">
+      <span class="label">about</span>
+      <div style="margin-top:4px;color:#bbb;line-height:1.5;">{{ s.description }}</div>
+    </div>
+    {% endif %}
+    {% if s.fun_facts %}
+    <div style="margin-top:12px;">
+      <span class="label">fun facts</span>
+      {% for fact in s.fun_facts %}
+      <div style="margin-top:4px;color:#aaa;">• {{ fact }}</div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="no-data">No bird sightings for {{ selected }}</div>
+{% endif %}
+
+<script>
+// Auto-refresh species cards every 30s — only update if content changed
+let _prevGridHTML = "";
+setInterval(() => {
+  fetch(window.location.href)
+    .then(r => r.text())
+    .then(html => {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+      const newGrid = doc.querySelector('.grid');
+      const newHTML = newGrid ? newGrid.innerHTML : "";
+      if (newHTML === _prevGridHTML) return;
+      _prevGridHTML = newHTML;
+      const oldGrid = document.querySelector('.grid');
+      const noData = document.querySelector('.no-data');
+      if (newGrid) {
+        if (oldGrid) {
+          oldGrid.innerHTML = newHTML;
+        } else if (noData) {
+          noData.replaceWith(newGrid);
+        }
+      }
+    }).catch(() => {});
+}, 30000);
+</script>
+{% endblock %}

@@ -1,0 +1,22 @@
+{
+    "camera_index": 0,
+    "resolution": [1920, 1080],
+    "detection": {
+        "roi": [0.0, 0.0, 1.0, 1.0],
+        "threshold": 30,
+        "blur_kernel": 21,
+        "min_changed_pixels": 5000,
+        "baseline_refresh_seconds": 300,
+        "cooldown_seconds": 12
+    },
+    "capture": {
+        "output_dir": "/path/to/birdhouse/captures",
+        "jpeg_quality": 95
+    },
+    "s3": {
+        "bucket": "your-s3-bucket-name",
+        "prefix_images": "images",
+        "prefix_results": "results",
+        "region": "us-east-1"
+    }
+}
